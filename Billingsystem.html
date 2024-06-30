@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Billing System Application</title>
+    <style>
+        body {
+            background-color: #1d2630;
+        }
+
+        * {
+            color: #fff;
+        }
+
+        #cart-table th, 
+        #cart-table td {
+            text-align: center;
+        }
+
+        #total-cost {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-5 mt-5">Billing System Application</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <form action="" id="item-form">
+                    <div class="form-group mb-3">
+                        <label for="item-name">Item Name:</label>
+                        <input type="text" class="form-control" id="item-name">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="item-price">Item Price:</label>
+                        <input type="text" class="form-control" id="item-price">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add To Cart</button>
+                </form>
+            </div>
+            <div class="col-md-6 mb-5">
+                <table class="table" id="cart-table">
+                    <thead>
+                        <tr>
+                            <th>Item Name</th>
+                            <th>Item Price</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <p id="total-cost">Total Cost: $0</p>
+                <button class="btn btn-success" id="generate-invoice">Generate Invoice</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            var items = [];
+
+            $("#item-form").on("submit", addItemToCart);
+            $("#cart-table").on("click", ".btn-danger", removeItemFromCart);
+            $("#generate-invoice").on("click", generateInvoice);
+
+            function addItemToCart(event) {
+                event.preventDefault();
+
+                var itemName = $("#item-name").val();
+                var itemPrice = $("#item-price").val();
+
+                if (itemName !== "" && itemPrice !== "") {
+                    var item = {
+                        name: itemName,
+                        price: parseFloat(itemPrice),
+                    };
+
+                    items.push(item);
+                    $("#cart-table tbody").append(
+                        "<tr><td>" + item.name + "</td><td>$" + item.price.toFixed(2) +
+                        '</td><td><button class="btn btn-sm btn-danger"><i class="fa fa-trash-alt"></i></button></td></tr>'
+                    );
+
+                    updateTotalCost();
+                    $("#item-name").val("");
+                    $("#item-price").val("");
+                }
+            }
+
+            function removeItemFromCart() {
+                var index = $(this).closest("tr").index();
+                items.splice(index, 1);
+                $(this).closest("tr").remove();
+                updateTotalCost();
+            }
+
+            function updateTotalCost() {
+                var totalCost = 0;
+                items.forEach(function (item) {
+                    totalCost += item.price;
+                });
+                $("#total-cost").text("Total Cost: $" + totalCost.toFixed(2));
+            }
+
+            function generateInvoice() {
+                var invoice = `<html>
+                <head>
+                    <title>INVOICE</title>
+                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+                </head>
+                <body>
+                    <div class="container mt-5">
+                        <h1 class="text-center">Invoice</h1>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Item Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+                items.forEach(function (item) {
+                    invoice += "<tr><td>" + item.name + "</td><td>$" + item.price.toFixed(2) + "</td></tr>";
+                });
+
+                invoice += 
+                `</tbody></table><p class="text-right">Total Cost: $` +
+                    getTotalCost() + `</p></div></body></html>`;
+
+                var popup = window.open("", "_blank");
+                popup.document.open();
+                popup.document.write(invoice);
+                popup.document.close();
+            }
+
+            function getTotalCost() {
+                var totalCost = 0;
+                items.forEach(function (item) {
+                    totalCost += item.price;
+                });
+                return totalCost.toFixed(2);
+            }
+        });
+    </script>
+</body>
+</html>
